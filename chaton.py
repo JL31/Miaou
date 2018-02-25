@@ -1,5 +1,12 @@
 # -*- coding: UTF-8 -*-
 
+# Import des librairies
+
+import socket
+import select
+import fonctions_miaou
+
+
 # Informations de connexion - hote et port de connexion
 
 hote = 'localhost'
@@ -18,14 +25,14 @@ print("Connexion établie avec le serveur sur le port {}\n".format(port))
 msg = b""
 
 while msg != b"fin":
-	
-	msg = input("> ")
-	msg_encode = msg.encode()
-	connexion_miaou.send(msg_encode)
-	
-	msg_recu = connexion_miaou.recv(1024)
-	print("{}\n".format(msg_recu.decode()))
-	
+    
+    msg = raw_input("> ")
+    msg_encode = msg.encode()
+    connexion_miaou.send(msg_encode)
+    
+    msg_recu = connexion_miaou.recv(1024)
+    print(">> {}\n".format(msg_recu.decode()))
+    
 
 # Fermeture de la connexion client
 
