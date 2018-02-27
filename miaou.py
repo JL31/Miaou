@@ -18,7 +18,7 @@ port = 12800
 connexion_principale = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 connexion_principale.bind((hote, port))
 connexion_principale.listen(5)
-print("Le serveur principal est lancé sur le port {}".format(port))
+print("Le serveur principal est lance sur le port {}".format(port))
 
 
 # Initialisation de variables
@@ -86,3 +86,4 @@ connexion_principale.close()
 
 
 # "C:\Python27\Lib\idlelib\idle.bat" "$(FULL_CURRENT_PATH)"
+
