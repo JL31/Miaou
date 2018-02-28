@@ -39,14 +39,8 @@ class Interface(Frame):
         
         # Création de la zone de saisie des messages - widget Entry
         
-        # self.var_saisie_msg = StringVar()
-        # self.saisie_msg = Entry(self, textvariable = self.var_saisie_msg)
-        # self.saisie_msg.grid(row = 1, sticky = "we")
-        # self.saisie_msg.bind("<Return>", self.envoi)
-        
         self.saisie_msg = Entry(self)
         self.saisie_msg.grid(row = 1, sticky = "we")
-        self.var_saisie_msg = self.saisie_msg.get()
         self.saisie_msg.bind("<Return>", self.envoi)
         
         
@@ -79,14 +73,24 @@ class Interface(Frame):
             Méthode qui permet d'envoyer des messages saisi par l'utilisateur
         """
         
-        # print(">>> {}".format(self.var_saisie_msg))
-        # self.saisie_msg.delete(0, END)
-        # self.var_saisie_msg_str = str(self.var_saisie_msg)
-        # self.msg_encode = self.var_saisie_msg_str.encode()
-        # self.connexion_miaou.send(self.msg_encode)
+        # Récupération du message saisi par l'utilisateur
         
-        print(">>> {}".format(self.var_saisie_msg))
+        self.var_saisie_msg = self.saisie_msg.get()
+        print(">>> {}".format(self.var_saisie_msg))     # Affichage pour débugage
+        
+        
+        # Nettoyage de la zone de saisie des messages
         self.saisie_msg.delete(0, END)
+        
+        
+        # TEST - envoi du message vers la zone de réception des messages
+        
+        self.reception_msg["state"] = "normal"
+        self.reception_msg.insert(END, "{}\n".format(self.var_saisie_msg))
+        self.reception_msg["state"] = "disabled"
+        
+        
+        # Envoi du message vers le serveur
         self.msg_encode = self.var_saisie_msg.encode()
         self.connexion_miaou.send(self.msg_encode)
         
