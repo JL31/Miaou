@@ -1,154 +1,176 @@
-# -*- coding: UTF-8 -*-
+# coding: UTF-8
 
 # Import des librairies
 
 import socket
-from threading import Thread
-import sys
 from Tkinter import *
 
 
 # Définition des classes
 
-class Interface(Frame):
+class LogginClient(Frame):
     """
-        Classe qui permet de définir l'interface du tchat côté client
+        Classe qui va demander le nom à l'utilisateur
     """
     
-    def __init__(self, fenetre, connexion_miaou):
+    def __init__(self, fenetre_loggin, connexion_miaou):
         """
-            Constructeur de la classe
+            Constructeur de la classe qui demande le nom à l'utilisateur
         """
         
-        # Définition de la fenêtre d'interface
+        Frame.__init__(self, fenetre_loggin, width = 150, height = 100)    # Constructeur de la classe parente
         
-        Frame.__init__(self, fenetre, width = 250, height = 500)
-        self.pack(fill = BOTH)
+        self.fenetre_loggin = fenetre_loggin
+        self.fenetre_loggin.title("Choix du loggin")
+        
+        self.connexion_miaou = connexion_miaou
+        self.fenetre = None
+        self.interface = None
         
         
-        # Socket du client
+        # Création de la zone de message d'information - ce sera un widget Label
+        
+        self.message_info = Label(fenetre_loggin, text = "Veuillez indiquer votre loggin")
+        self.message_info.grid(row = 0)
+        
+        
+        # Création de la zone de saisie du loggin - ce sera un widget Entry
+        
+        self.loggin_saisi = Entry(fenetre_loggin)
+        self.loggin_saisi.grid(row = 1)
+        
+        
+        # Création du bouton qui permet de quitter le tchat - ce sera un widget Button
+        
+        self.bouton_valider = Button(fenetre_loggin, text = "Valider", command = self.valider)
+        self.bouton_valider.grid(row = 3)
+        
+    
+    def valider(self):
+        """
+            Méthode qui permet de valider le loggin utilisateur
+        """
+        
+        # Récupération du loggin
+        
+        self.loggin = self.loggin_saisi.get()
+        
+        
+        # Vérification du loggin
+        
+        if not self.loggin.isalnum():
+            
+            self.message_info["text"] = "Erreur dans la saisie du loggin, veuillez recommencer"
+            self.loggin_saisi.delete(0, END)
+            
+        else:
+            
+            self.fenetre_loggin.destroy()
+            
+            self.fenetre = Tk()
+            self.interface = Interface(self.fenetre, self.connexion_miaou, self.loggin)
+            self.interface.mainloop()
+            
+
+class Interface(Frame):
+    """
+        Classe de création de la fenêtre de tchat
+    """
+    
+    def __init__(self, fenetre, connexion_miaou, loggin):
+        """
+            Constructeur de la classe de création de la fenêtre de tchat
+        """
+        
+        # Définition des dimensions de la fenêtre d'interface
+        
+        Frame.__init__(self, fenetre, width = 250, height = 500)    # Constructeur de la classe parente
+        
+        self.fenetre = fenetre
+        self.fenetre.title(loggin)
+        
+        self.msg_recu = b""
+        self.loggin = loggin
+        self.message = ""
+        
+        
+        # Informations de connexion
         
         self.connexion_miaou = connexion_miaou
         
         
-        # Création de la zone de réception des messages - widget Text
+        # Création de la zone de lecture - ce sera un widget Text
         
-        self.reception_msg = Text(self, state = DISABLED)
-        self.reception_msg.grid(row = 0)
-        
-        
-        # Création de la zone de saisie des messages - widget Entry
-        
-        self.saisie_msg = Entry(self)
-        self.saisie_msg.grid(row = 1, sticky = "we")
-        self.saisie_msg.bind("<Return>", self.envoi)
+        self.zone_lecture = Text(fenetre, state = DISABLED)
+        self.zone_lecture.grid(row = 0)
         
         
-        # Création du bouton pour quitter le tchat - widget Button
+        # Création de la zone de saisie de texte - ce sera un widget Entry
         
-        self.bouton_quitter = Button(self, text = "Quitter", command = self.quit)
+        self.ligne_texte_saisi = Entry(fenetre)
+        self.ligne_texte_saisi.grid(row = 1, sticky = "we")
+        self.ligne_texte_saisi.bind("<Return>", self.envoyer)
+        
+        
+        # Création du bouton qui permet de quitter le tchat - ce sera un widget Button
+        
+        self.bouton_quitter = Button(fenetre, text = "Quitter", command = self.quit)
         self.bouton_quitter.grid(row = 2)
         
         
-        # Définition des thread
+        # Appel à la méthode d'affichage du contenu du message reçu
         
-        # # # self.msg = self.connexion_miaou.recv(1024)
+        self.AMR()
         
-        # # # if self.msg == b"fin":
+    
+    def envoyer(self, event):
+        """
+            Méthode qui permet d'envoyer le message saisi par l'utilisateur
+        """
+        
+        self.msg = self.ligne_texte_saisi.get()
+        self.ligne_texte_saisi.delete(0, END)
+        
+        self.message = "{0} >> {1}".format(self.loggin, self.msg)
+        self.connexion_miaou.send(self.message.encode())
+        
+    
+    def AMR(self):
+        """
+            Méthode qui permet d'afficher le contenu du message reçu dans la zone de réception des messages
+        """
+        
+        # Réception et décodage du message
+        
+        self.connexion_miaou.setblocking(0)
+        
+        try:
             
-            # # # self.statut_client = False
+            self.msg_recu = self.connexion_miaou.recv(1024)
             
-        # # # self.saisie_msg.insert(1, self.msg.decode())
-        
-        # self.TRM = ReceptionMessage(self.connexion_miaou)
-        # self.statut_client = self.TRM.statut_client
-        # self.TRM.start()
-        
-        # self.TEM = EnvoiMessage(self.connexion_miaou)
-        # self.TEM.start()
-        
-    
-    def envoi(self, event):
-        """
-            Méthode qui permet d'envoyer des messages saisi par l'utilisateur
-        """
-        
-        # Récupération du message saisi par l'utilisateur
-        
-        self.var_saisie_msg = self.saisie_msg.get()
-        print(">>> {}".format(self.var_saisie_msg))     # Affichage pour débugage
-        
-        
-        # Nettoyage de la zone de saisie des messages
-        self.saisie_msg.delete(0, END)
-        
-        
-        # TEST - envoi du message vers la zone de réception des messages
-        
-        self.reception_msg["state"] = "normal"
-        self.reception_msg.insert(END, "{}\n".format(self.var_saisie_msg))
-        self.reception_msg["state"] = "disabled"
-        
-        
-        # Envoi du message vers le serveur
-        self.msg_encode = self.var_saisie_msg.encode()
-        self.connexion_miaou.send(self.msg_encode)
-        
-
-class ReceptionMessage(Thread):
-    """
-        Classe qui permet de gérer la réception des messages
-    """
-    
-    def __init__(self, connexion_miaou):
-        """
-            Constructeur de la classe
-        """
-        
-        Thread.__init__(self)
-        self.connexion_miaou = connexion_miaou
-        self.statut_client = True
-        
-    
-    def run(self):
-        """
-            Méthode lancée à l'exécution du thread
-        """
-        
-        self.msg = self.connexion_miaou.recv(1024)
-        
-        if self.msg == b"fin":
+        except:
             
-            self.statut_client = False
+            pass
             
-        sys.stdout.write(">> {}".format(self.msg.decode()))
         
-        return self.statut_client
+        # Si le mesasge reçu n'est pas vide alors on le décode et on l'ajoute à la zone de réception des messages
         
-
-class EnvoiMessage(Thread):
-    """
-        Classe qui permet de gérer l'envoi des messages
-    """
-    
-    def __init__(self, connexion_miaou):
-        """
-            Constructeur de la classe
-        """
+        if self.msg_recu != b"":
+            
+            # Décodage du message
+            
+            self.msg_recu_decode = self.msg_recu.decode()
+            
+            
+            # Affichage du message dans la zone de réception des messages
+            
+            self.zone_lecture["state"] = "normal"
+            self.zone_lecture.insert(END, "{}\n".format(self.msg_recu_decode))
+            self.zone_lecture["state"] = "disabled"
+            
         
-        Thread.__init__(self)
-        self.connexion_miaou = connexion_miaou
-        
-    
-    def run(self):
-        """
-            Méthode lancée à l'exécution du thread
-        """
-        
-        self.saisie = sys.stdin.readline()
-        print("1-")
-        self.msg_encode = self.saisie.encode()
-        connexion_miaou.send(self.msg_encode)
+        self.msg_recu = b""
+        self.fenetre.after(100, self.AMR)
         
 
 # Informations de connexion - hote et port de connexion
@@ -164,29 +186,12 @@ connexion_miaou.connect((hote, port))
 print("Connexion etablie avec le serveur sur le port {}\n".format(port))
 
 
-# Boucle d'échange avec le serveur
+# Création de la fenêtre
 
-statut_client = True
+fenetre_loggin = Tk ()
 
-fenetre = Tk()
-interface = Interface(fenetre, connexion_miaou)
-interface.mainloop()
-
-# # # while statut_client:
-    
-    # # # TRM = ReceptionMessage(connexion_miaou)
-    # # # statut_client = TRM.statut_client
-    # # # TRM.start()
-    
-    # # # TEM = EnvoiMessage(connexion_miaou)
-    # # # TEM.start()
-    
-    # saisie = sys.stdin.readline()
-    # msg_encode = saisie.encode()
-    # connexion_miaou.send(msg_encode)
-    
-
-interface.destroy()    
+loggin_client = LogginClient(fenetre_loggin, connexion_miaou)
+loggin_client.mainloop()
 
 
 # Fermeture de la connexion client
